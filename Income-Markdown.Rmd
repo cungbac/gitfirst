@@ -1,0 +1,150 @@
+---
+title: "Exercise - Income"
+author: "Tran Cung Bac"
+date: "5/7/2020"
+output: html_document
+---
+
+### Library
+```{r,message=FALSE,warning=FALSE}
+library(dplyr)
+library(readxl)
+library(ggplot2)
+library(tidyverse)
+library(summarytools)
+library(patchwork)
+````
+
+### Import data
+```{r,message=FALSE,warning=FALSE}
+income <- read_excel('/Users/cungbac/Documents/Learning/4. R programming/15. Examination/Income/Income.xlsx')
+head(income)
+summary(income)
+````
+
+## Making Plots
+##### Create "no" column
+```{r}
+income <- income %>%
+  arrange(Income) %>%
+  mutate(no = seq_along(income$Income))
+
+income <- income[,c(2,1)]
+````
+
+##### Generate some statistics
+```{r,message = F,warning = F}
+Mean = mean(income$Income)
+Median = median(income$Income)
+sd = sd(income$Income)
+````
+#### p1
+```{r,message=FALSE,warning=FALSE}
+p1 <- income %>%
+  ggplot(aes(x= no,y=Income)) +
+  geom_point(color = 'red') + 
+  geom_hline(yintercept = mean(income$Income),
+             color = 'blue',
+             size = 1.5) +
+  geom_text(aes(0,mean(Income),
+                label = paste('Mean = ',mean(Income)),
+                vjust = -1, 
+                hjust = -1)) + 
+  geom_hline(yintercept = Median) + 
+  geom_text(aes(0,Median,
+                label = paste('Median =',Median),
+                vjust = 2.5,
+                hjust = -1.2)) + 
+  theme(axis.title.x = element_blank())
+````
+
+#### p2
+```{r,message=FALSE,warning=FALSE}
+p2 <- income %>%
+  ggplot(aes(x= no,y=Income)) +
+  geom_point(color = 'lightblue') + 
+  geom_hline(yintercept = mean(income$Income),
+             color = 'blue',
+             size = 1.2) +
+  geom_text(aes(0,mean(Income),
+                label = paste('Mean = ',mean(Income)),
+                vjust = -1, 
+                hjust = -0.8)) + 
+  geom_hline(yintercept = Mean + sd,
+             linetype = 'dashed',
+             size = 1.2) + 
+  geom_text(aes(0,Mean + sd,
+                label = paste('Mean + 1sd'),
+                vjust = -1,
+                hjust = -1)) + 
+  geom_hline(yintercept = Mean - sd,
+             linetype = 'dashed',
+             size = 1.2) + 
+  geom_text(aes(0,Mean - sd,
+                label = paste('Mean - 1sd'),
+                vjust = -1,
+                hjust = -1)) + 
+  theme(axis.title.x = element_blank())
+````
+
+#### p3
+```{r,message=FALSE,warning=FALSE}
+p3 <- income %>%
+  ggplot(aes(y = Income, x = 0)) + 
+  geom_boxplot() + 
+  stat_summary(fun = 'mean', geom = 'point',color = 'red') +
+  geom_text(aes(0,Mean,
+                label = 'Mean',
+                vjust = 2
+                )) +
+  theme(axis.title.x = element_blank())
+````
+
+#### p4 
+```{r,message=F,warning=FALSE}
+p4 <- income %>%
+  ggplot(aes(x = Income)) + 
+  geom_density(fill = 'lightblue',color = 'lightblue') +
+  geom_vline(xintercept = Mean) +
+  geom_text(aes(Mean,0,
+                label = 'Mean',
+                vjust = -1,
+                hjust = -0.2)) +
+  geom_vline(xintercept = Median,
+             color = 'brown') + 
+  geom_text(aes(Median,0,
+               label = 'Median',
+               vjust = - 1,
+               hjust = 1.2))
+````
+
+### Plots
+```{r,message=F,warning=F,fig.width=10,fig.height=8}
+(p1 + p2)/(p3 + p4)
+````
+
+## Insight Analyst
+#### 1. Lable the range of income
+```{r,message=F,warning=F,results='asis'}
+income <- income %>%
+  mutate( Type = case_when(
+    Income < 10 ~ "L",
+    Income <= 20 ~ "T",
+    TRUE ~ "H"
+  ))
+
+income$Type <- factor(income$Type,levels = c("L","H","T"), 
+                      labels = c("Lower","Higher", "Target"))
+
+ggplot(income,aes(x = Type, fill = Type))+
+  geom_bar(stat = 'count') +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  geom_text(stat = 'count', 
+            aes(label = paste0(..count..,"%"),vjust = -0.5))
+
+````
+
+Có vẻ chiến lược kinh doanh của công ty đã target đúng 46% (thu nhập 10 - 20tr), còn lại đều nằm ngoài khoảng này. 
+
+
